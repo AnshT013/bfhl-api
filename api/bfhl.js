@@ -1,9 +1,10 @@
-const { json } = require('micro'); // or use 'vercel-node'
+const { json } = require('micro');
 
 module.exports = async (req, res) => {
-  // Only POST allowed
+  // Only allow POST
   if (req.method !== 'POST') {
-    return res.status(200).json({ operation_code: 1 });
+    res.setHeader('Allow', 'POST'); // Optional, tells client what methods are allowed
+    return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
   const FULL_NAME = (process.env.FULL_NAME || "ansh tiwari").trim().toLowerCase();
