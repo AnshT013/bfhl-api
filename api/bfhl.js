@@ -1,26 +1,11 @@
-require('dotenv').config(); // <-- load .env variables
-const express = require("express");
-const cors = require("cors");
+const { json } = require('micro'); // or use 'vercel-node'
 
-const app = express();
-const PORT = process.env.PORT || 3000; // use PORT from .env if available
+module.exports = async (req, res) => {
+  // Only POST allowed
+  if (req.method !== 'POST') {
+    return res.status(200).json({ operation_code: 1 });
+  }
 
-// Middleware
-app.use(cors());
-app.use(express.json({ limit: "1mb" })); // no need for body-parser separately
-
-// Root GET route (optional, just to check server)
-app.get("/", (req, res) => {
-  res.send("BFHL API is running 🚀");
-});
-
-// ✅ GET /bfhl - returns operation code
-app.get("/bfhl", (req, res) => {
-  res.json({ operation_code: 1 });
-});
-
-// ✅ POST /bfhl - main logic
-app.post("/bfhl", (req, res) => {
   const FULL_NAME = (process.env.FULL_NAME || "ansh tiwari").trim().toLowerCase();
   const DOB = process.env.DOB_DDMMYYYY || "13082003";
   const EMAIL = process.env.EMAIL || "tiwariansh1308@gmail.com";
@@ -29,7 +14,8 @@ app.post("/bfhl", (req, res) => {
   const user_id = `${FULL_NAME.replace(/\s+/g, "_")}_${DOB}`;
 
   try {
-    const { data } = req.body;
+    const body = await json(req);
+    const data = body.data;
 
     if (!Array.isArray(data)) {
       return res.status(200).json({
@@ -46,7 +32,6 @@ app.post("/bfhl", (req, res) => {
       });
     }
 
-    // Initialize arrays
     const odd_numbers = [];
     const even_numbers = [];
     const alphabets = [];
@@ -70,13 +55,12 @@ app.post("/bfhl", (req, res) => {
       }
     });
 
-    // Build concat_string (reverse + alternating caps)
     const reversed = alphaChars.reverse();
     const concat_string = reversed
       .map((ch, idx) => (idx % 2 === 0 ? ch.toUpperCase() : ch.toLowerCase()))
       .join("");
 
-    res.status(200).json({
+    return res.status(200).json({
       is_success: true,
       user_id,
       email: EMAIL,
@@ -89,8 +73,8 @@ app.post("/bfhl", (req, res) => {
       concat_string,
     });
   } catch (err) {
-    console.error("Error processing data:", err);
-    res.status(200).json({
+    console.error("Error:", err);
+    return res.status(200).json({
       is_success: false,
       user_id,
       email: EMAIL,
@@ -103,6 +87,4 @@ app.post("/bfhl", (req, res) => {
       concat_string: "",
     });
   }
-});
-
-
+};
